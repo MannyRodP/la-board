@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>if(typeof L==="undefined"){document.write('<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>');}</script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>LA · Sept 24–27 · Build the weekend</title>
+<style>
+  :root{--sand:#F4EBDD;--paper:#FFFBF5;--ink:#1C1B1A;--ink2:#5A544C;--ink3:#9A9187;--line:#E3D8C8;
+    --card:#E4572E;--cardsoft:#FBE3DA;--pacific:#1F6F78;--pacificsoft:#DCEEF0;--palm:#3E7C4F;--palmsoft:#E1EFE3;--gold:#E8B04B;--goldsoft:#FBEFD2;
+    --haze:var(--sand);--amber:#B7791F;--ambersoft:var(--goldsoft);--green:var(--palm);--greensoft:var(--palmsoft);--r:10px}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{display:flex;flex-direction:column;background:var(--sand);color:var(--ink);font:15px/1.45 Inter,"Avenir Next","Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+  button{font:inherit}
+  header{position:relative;color:#fff;padding:16px 16px 14px;background:linear-gradient(180deg,#2B1E3A 0%,#7A3A5B 35%,#E4572E 70%,#E8B04B 100%);flex:0 0 auto}
+  header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:20px;
+    background:radial-gradient(circle at 12% 100%,#1C1B1A 0 6px,transparent 7px),radial-gradient(circle at 30% 100%,#1C1B1A 0 9px,transparent 10px),radial-gradient(circle at 55% 100%,#1C1B1A 0 5px,transparent 6px),radial-gradient(circle at 78% 100%,#1C1B1A 0 8px,transparent 9px),radial-gradient(circle at 94% 100%,#1C1B1A 0 6px,transparent 7px),linear-gradient(to top,#1C1B1A 0 4px,transparent 4px)}
+  header h1{margin:0;font:400 38px/.95 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.05em}
+  header h1 span{display:block;font:500 11.5px/1.35 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;opacity:.92;margin-top:6px}
+  .who{display:flex;gap:6px;margin-top:10px;align-items:center;font-size:12px;flex-wrap:wrap;padding-bottom:8px}
+  .who b{display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:2px 8px;font-weight:600;font-size:11.5px}
+  #whoami{border:0;background:none;padding:0;color:#fff;font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+  #sync{display:inline-flex;align-items:center;gap:5px}
+  #sync::before{content:"";width:7px;height:7px;border-radius:50%;background:#7CF29A;box-shadow:0 0 0 3px rgba(124,242,154,.25)}
+  .tools{display:flex;gap:6px;margin-top:2px;flex-wrap:wrap;padding-bottom:6px}
+  .tools button{border:1px solid rgba(255,255,255,.5);background:rgba(0,0,0,.18);color:#fff;border-radius:999px;padding:5px 10px;font-size:12px;cursor:pointer}
+  button:focus-visible,a:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+  .app{display:grid;grid-template-columns:1fr;flex:1;min-height:0}
+  .pane{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 90px;display:none;min-height:0}
+  .pane.on{display:block}
+  .rtabs{display:none}
+  @media(min-width:900px){
+    .app{grid-template-columns:420px 1fr;grid-template-rows:auto 1fr}
+    .pane{display:block;padding-bottom:24px}
+    .pane#menu{border-right:1px solid var(--line);grid-row:1/3}
+    .pane#plan,#map{grid-column:2}
+    .pane#plan{display:none}.pane#plan.on{display:block}
+    #map.on{display:flex}
+    .switch{display:none}
+    .rtabs{display:flex;gap:6px;padding:10px 12px 0;grid-column:2}
+    .rtabs button{border:1.5px solid var(--ink);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink);cursor:pointer}
+    .rtabs button[aria-selected="true"]{background:var(--ink);color:var(--sand)}
+  }
+  .switch{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--paper);border-top:1px solid var(--line);z-index:20;padding-bottom:env(safe-area-inset-bottom)}
+  .switch button{flex:1;border:0;background:none;padding:11px 0 12px;font:400 15px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.14em;color:var(--ink3);cursor:pointer}
+  .switch button[aria-selected="true"]{color:var(--card);box-shadow:inset 0 3px 0 var(--card)}
+  .filters{display:flex;gap:6px;overflow-x:auto;padding:0 0 8px;scrollbar-width:none;position:sticky;top:0;background:var(--sand);z-index:2}
+  .filters::-webkit-scrollbar{display:none}
+  .filters button{flex:0 0 auto;border:1.5px solid var(--ink);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--sand)}
+  .search{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;margin:0 0 8px;background:var(--paper)}
+  .hint{font-size:12px;color:var(--ink3);margin:0 0 8px}
+  .item{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:11px 12px 10px 42px;margin:0 0 10px;position:relative;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+  .item.placed{opacity:.5}
+  .handle{position:absolute;left:0;top:0;bottom:0;width:32px;display:flex;align-items:center;justify-content:center;color:var(--ink3);font-size:18px;letter-spacing:-2px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab;border-right:1px solid var(--line);border-radius:var(--r) 0 0 var(--r);background:var(--sand)}
+  .item[data-cat="eat"] .handle{background:var(--cardsoft);color:var(--card)}
+  .item[data-cat="drink"] .handle{background:var(--pacificsoft);color:var(--pacific)}
+  .item[data-cat="am"] .handle{background:var(--palmsoft);color:var(--palm)}
+  .handle:active{cursor:grabbing}
+  .item .row{display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .item h4{margin:0;font:400 21px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.03em;display:flex;align-items:center;gap:8px}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:999px;padding:3px 10px 3px 6px;font-size:12px;font-weight:500;color:var(--ink2);background:var(--sand);margin-top:6px;max-width:100%}
+  .pill svg{width:16px;height:16px;fill:none;stroke:var(--ink);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .item[data-cat="eat"] .pill svg{stroke:var(--card)}.item[data-cat="drink"] .pill svg{stroke:var(--pacific)}.item[data-cat="am"] .pill svg{stroke:var(--palm)}
+  .pick .g{display:inline-flex;vertical-align:middle;margin-right:5px}
+  .pick .g svg{width:15px;height:15px;fill:none;stroke:var(--ink2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .coin{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:400 13px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.02em;flex:0 0 auto;border:2px solid var(--ink);color:var(--ink);background:#fff}
+  .coin.fifty{border-color:var(--gold);background:var(--gold)}
+  .coin.res{border-color:var(--card);background:var(--card);color:#fff}
+  .coin.mich{border-color:var(--ink);background:var(--ink);color:var(--gold)}
+  .coin.canon{border-style:dashed;color:var(--ink3);border-color:var(--ink3)}
+  .pick .coin{width:24px;height:24px;font-size:10px;border-width:1.5px;margin-right:4px;vertical-align:middle}
+  .item .badge{font:400 12px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.12em;padding:4px 8px;border-radius:4px;background:var(--ink);color:#fff;white-space:nowrap}
+  .badge.b50{background:var(--gold);color:var(--ink)}
+  .badge.bib{background:var(--palm)}
+  .badge.res{background:var(--card)}
+  .item .sub{font-size:12px;color:var(--ink3);margin-top:3px}
+  .item .why{font-size:13.5px;color:var(--ink2);margin-top:6px}
+  .item .dist{font-size:12px;color:var(--ink);margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+  .item .dist span{background:var(--sand);border-radius:4px;padding:2px 7px;font-weight:500}
+  .item .dist .walk{background:var(--palmsoft);color:var(--palm)}
+  .item .flags{font-size:12px;color:#8a5a12;margin-top:5px}
+  .more{margin-top:6px;font-size:13px;color:var(--ink2)}
+  .more summary{cursor:pointer;color:var(--pacific);font-size:12px;list-style:none;touch-action:auto}
+  .more summary::-webkit-details-marker{display:none}
+  .more summary::before{content:"+ "}
+  .more[open] summary::before{content:"– "}
+  .more p{margin:4px 0 0}
+  .links{display:flex;gap:12px;margin-top:6px;font-size:12px}
+  .links a{color:var(--pacific);text-decoration:none;border-bottom:1px solid var(--pacificsoft);touch-action:auto}
+  a.dir{color:var(--card);font-weight:600;border-bottom-color:var(--cardsoft)}
+  .pick .leg a.dir{color:var(--card);text-decoration:none;font-weight:600}
+  .votes{display:flex;gap:5px;margin-top:10px;align-items:center}
+  .votes button{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;font-size:11px;padding:3px 9px;color:var(--ink3);font-weight:600;cursor:pointer;touch-action:auto}
+  .votes button[aria-pressed="true"]{color:#fff;border-color:transparent;background:var(--ink)}
+  .votes button.mj[aria-pressed="true"]{background:var(--palm)}
+  .votes button.l[aria-pressed="true"]{background:var(--gold);color:var(--ink)}
+  .votes button.mine{box-shadow:0 0 0 2px var(--paper),0 0 0 3.5px var(--ink)}
+  .votes button:not(.mine){opacity:.75}
+  .add{margin-left:auto;border:1.5px solid var(--card)!important;color:var(--card)!important;background:var(--paper)!important;font-weight:600;opacity:1!important}
+  .item.dragging{opacity:.9;box-shadow:0 8px 24px rgba(0,0,0,.18);transform:scale(1.02)}
+  .day{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);margin:0 0 12px;overflow:hidden}
+  .day h3{margin:0;padding:10px 12px;display:flex;justify-content:space-between;align-items:baseline;color:#fff;background:var(--ink);font:400 22px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.06em}
+  .day h3 small{font:500 11px/1.3 Inter,sans-serif;letter-spacing:.06em;text-transform:uppercase;opacity:.85;text-align:right}
+  .day.fri h3{background:var(--card)}.day.game h3{background:#8C1D2E}.day.sun h3{background:var(--pacific)}
+  .slot{border-top:1px solid var(--line);padding:8px 12px;min-height:44px;display:grid;grid-template-columns:72px 1fr;gap:8px}
+  .slot .lab{font:400 12px/1.6 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.1em;color:var(--ink3);padding-top:4px}
+  .slot .drop{min-height:30px;border:1px dashed transparent;border-radius:8px;padding:2px}
+  .slot.over .drop{border-color:var(--card);background:var(--cardsoft)}
+  .fixed{font-size:12.5px;color:var(--ink2);background:var(--sand);border-left:3px solid var(--gold);border-radius:6px;padding:6px 8px;margin:3px 0}
+  .fixed b{color:var(--ink)}
+  .pick{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--paper);border:1px solid var(--line);border-left:3px solid var(--card);border-radius:6px;padding:6px 8px;margin:3px 0;font-size:13px}
+  .pick[data-cat="drink"]{border-left-color:var(--pacific)}.pick[data-cat="am"]{border-left-color:var(--palm)}
+  .pick .m{font-size:11.5px;color:var(--ink3)}
+  .pick .v{font-size:11px;color:var(--ink3)}
+  .pick .leg{display:block;font-size:11px;color:var(--ink3);margin-top:2px}
+  .pick .leg.walk{color:var(--palm)}
+  .pick button{border:0;background:none;color:var(--ink3);font-size:18px;line-height:1;cursor:pointer;padding:0 4px}
+  .empty{font-size:12px;color:var(--ink3);padding:5px 2px;border:1px dashed var(--line);border-radius:6px;text-align:center}
+  #ghost{position:fixed;pointer-events:none;z-index:50;width:280px;display:none}
+  #sheet{position:fixed;inset:auto 0 0 0;background:var(--paper);border-top:1px solid var(--line);border-radius:14px 14px 0 0;padding:14px 14px calc(24px + env(safe-area-inset-bottom));z-index:60;display:none;box-shadow:0 -8px 30px rgba(0,0,0,.15);max-height:70vh;overflow:auto}
+  #sheet.on{display:block}
+  #sheet h4{margin:0 0 8px;font:400 20px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.05em}
+  #sheet .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+  #sheet button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:9px 8px;font-size:13px;text-align:left;cursor:pointer}
+  #sheet button.day{grid-column:1/-1;background:var(--ink);color:var(--sand);border-color:var(--ink);font:400 16px/1 "Bebas Neue",Impact,"Arial Narrow",sans-serif;letter-spacing:.08em}
+  #sheet .close{margin-top:10px;width:100%;text-align:center;color:var(--ink2)}
+  #scrim{position:fixed;inset:0;background:rgba(28,27,26,.35);z-index:55;display:none}
+  #scrim.on{display:block}
+  #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:64px;background:var(--ink);color:var(--sand);padding:8px 14px;border-radius:999px;font-size:13px;display:none;z-index:70}
+  #map{padding:0;display:none;flex-direction:column}
+  #map.on{display:flex}
+  .mapbar{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;background:var(--paper);border-bottom:1px solid var(--line);scrollbar-width:none;flex:0 0 auto}
+  .mapbar::-webkit-scrollbar{display:none}
+  .mapbar button{flex:0 0 auto;border:1.5px solid var(--ink);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer}
+  .mapbar button[aria-pressed="true"]{background:var(--ink);color:var(--sand)}
+  #leaflet{flex:1;min-height:0}
+  .legend{display:flex;gap:10px;flex-wrap:wrap;padding:6px 12px calc(6px + env(safe-area-inset-bottom));font-size:12px;color:var(--ink2);background:var(--paper);border-top:1px solid var(--line);flex:0 0 auto}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+  .house-pin{position:relative;width:44px;height:52px;display:flex;flex-direction:column;align-items:center;filter:drop-shadow(0 4px 4px rgba(0,0,0,.35))}
+  .house-pin svg{width:44px;height:44px}
+  .house-pin .shadow{position:absolute;bottom:0;width:26px;height:6px;border-radius:50%;background:rgba(0,0,0,.25)}
+  .house-pin .tag{position:absolute;top:-16px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--gold);border-radius:4px;padding:1px 6px;font:400 11px/1.4 "Bebas Neue",Impact,sans-serif;letter-spacing:.1em;white-space:nowrap}
+  @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+  @keyframes squash{0%,100%{transform:scaleX(1);opacity:.35}50%{transform:scaleX(.6);opacity:.15}}
+  @media (prefers-reduced-motion:reduce){.house-pin,.house-pin .shadow{animation:none}}
+  .leaflet-popup-content{font:13px/1.4 Inter,sans-serif;margin:10px 12px}
+  .leaflet-popup-content b{font-size:14px}
+  .leaflet-popup-content a{color:var(--pacific)}
+</style>
+
+</head>
+<body>
+<header>
+  <h1>Los Angeles<span>Thu 24 – Sun 27 · Sept 2026 · where we eat and drink</span></h1>
+  <div class="who"><button id="whoami" style="border:0;background:none;padding:0;color:var(--card);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline"></button><b>M</b><b class="mj">MJ</b><b class="l">L</b> <span style="margin-left:6px" id="sync"></span> <span style="margin-left:6px">· minutes are Uber from 723 N Harvard</span></div>
+  <div class="tools">
+    <button id="share">Copy plan as text</button>
+    <button id="reset">Clear plan</button>
+  </div>
+</header>
+
+<div class="app">
+  <section class="pane on" id="menu" aria-label="Menu">
+    <div class="filters" id="filters">
+      <button aria-pressed="true" data-f="all">All</button>
+      <button aria-pressed="false" data-f="eat">Eat</button>
+      <button aria-pressed="false" data-f="drink">Drink</button>
+      <button aria-pressed="false" data-f="am">Coffee & brunch</button>
+      <button aria-pressed="false" data-f="voted">Has votes</button>
+    </div>
+    <input class="search" id="q" placeholder="Search the menu" aria-label="Search">
+    <p class="hint">Sorted by distance from 723 N Harvard. Grab ⠿ to drag, or tap “Add to a day.” Faded = already on the plan. Between meals is L's call.</p>
+    <div id="list"></div>
+  </section>
+
+  <div class="rtabs"><button aria-selected="true" data-pane="plan">Plan</button><button aria-selected="false" data-pane="map">Map</button></div>
+  <section class="pane" id="plan" aria-label="Plan">
+    <div id="days"></div>
+  </section>
+  <section class="pane" id="map" aria-label="Map">
+    <div class="mapbar" id="mapbar">
+      <button aria-pressed="true" data-m="all">All</button>
+      <button aria-pressed="false" data-m="eat">Eat</button>
+      <button aria-pressed="false" data-m="drink">Drink</button>
+      <button aria-pressed="false" data-m="am">Coffee & brunch</button>
+      <button aria-pressed="false" data-m="plan">On the plan · by day</button>
+    </div>
+    <div id="leaflet"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+</div>
+
+<nav class="switch" aria-label="Panes">
+  <button aria-selected="true" data-pane="menu">Menu</button>
+  <button aria-selected="false" data-pane="plan">Plan</button>
+  <button aria-selected="false" data-pane="map">Map</button>
+</nav>
+
+<div id="ghost"></div>
+<div id="scrim"></div>
+<div id="sheet" role="dialog" aria-modal="true"></div>
+<div id="toast"></div>
+
+<script>
+// ---------- DATA ----------
+// mi = Uber miles from 723 N Harvard, min = typical Uber minutes off-peak, walk = minutes on foot (null if not sensible)
+const ITEMS = [
+ // Walkable block
+ {id:'littlefish',glyph:'fish',kind:"fish sandwich shop",icon:'🐟',lat:34.0836,lng:-118.3102,n:'Little Fish',cat:'eat',hood:'Melrose Hill · 5035 Melrose',score:'Infatuation 8.8',badge:'bib',tag:'Bib Gourmand 2026',mi:.3,min:2,walk:6,why:'Fried fish sandwich at lunch, seafood dinner at night. Chefs named young chefs of the year.',flags:'Closed Mon–Tue. Lunch walk-in; book dinner.',src:"https://www.theinfatuation.com/los-angeles/reviews/little-fish-melrose-hill",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=5035%20Melrose%20Ave%20Los%20Angeles",blurb:"Anna Sonenshein and Niki Vahle started Little Fish as a pop-up chasing a perfect fried fish sandwich around Echo Park before landing this sunlit corner in Melrose Hill. Daytime is walk-in sandwiches and steak salads; after dark the menu turns to scallop crudo, tiny mussel sandwiches, and abalone rice cabbage rolls. Michelin gave it a Bib Gourmand in June 2026 and named the two of them young chefs of the year."},
+ {id:'kuyalord',glyph:'fire',kind:"Filipino counter",icon:'🐖',lat:34.0837,lng:-118.3095,n:'Kuya Lord',cat:'eat',hood:'Melrose Hill · 5003 Melrose',score:'Infatuation 8.7',mi:.3,min:2,walk:6,why:'Filipino counter service. Lechon bowl, grilled short rib tray for the table.',flags:'Lunch to 3:30, dinner 5–9. Closed Mon. No parking, so walk.',src:"https://www.theinfatuation.com/los-angeles/reviews/kuya-lord",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=5003%20Melrose%20Ave%20Los%20Angeles",blurb:"Chef Lord Maynard Llera cooked in fine dining kitchens before he started grilling Filipino food out of his garage during the pandemic, and the line around the block earned him this counter on Melrose. The rolled lucenachon pork belly and the sweet longganisa are the signatures, and he's usually on the line himself. He won a James Beard award for Best Chef: California, which is rare for a place where you order at a counter."},
+ {id:'corridor109',glyph:'cocktail',kind:"hidden cocktail bar",icon:'🍣',lat:34.0836,lng:-118.3082,n:'Bar 109 / Corridor 109',cat:'drink',hood:'Melrose Hill',score:'Michelin ★ 2026 (Corridor)',mi:.4,min:2,walk:8,why:'Bar 109 is the cocktail bar; Corridor 109 is the 11-seat fish counter hidden behind it. Go for the bar.',flags:'Counter books far out; the bar is walk-in.',src:"https://www.forbes.com/sites/jimdobson/2026/06/24/california-gets-12-new-michelin-starred-restaurants-for-2026/",srcLabel:"Michelin 2026 (Forbes)",photos:"https://www.google.com/maps/search/?api=1&query=Melrose%20Hill%20Los%20Angeles%20Los%20Angeles",blurb:"Bar 109 is the neighborhood cocktail bar; behind a door inside it, chef Brian Baik runs Corridor 109, an eleven-seat counter serving mostly raw fish flown in from Japan. Baik trained in New York before coming home to LA, and Michelin gave the counter a star in June 2026 in its first year. The bar out front is the easy way in."},
+ {id:'sabores',glyph:'taco',kind:"Oaxacan family spot",icon:'🫓',lat:34.0907,lng:-118.3115,n:'Sabores Oaxaqueños',cat:'eat',hood:'East Hollywood · Santa Monica Blvd',score:'Infatuation 8.4',mi:.7,min:4,walk:14,why:'Tlayuda mixta for the table, goat birria taco the size of a forearm.',flags:'Casual. Parking lot.',src:"https://www.theinfatuation.com/los-angeles/reviews/sabores-oaxaquenos-east-hollywood",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=5520%20Santa%20Monica%20Blvd%20Los%20Angeles",blurb:"The second location of a Koreatown Oaxacan institution, with the one thing the original never had: a parking lot. The tlayuda mixta is a pizza-sized crisp tortilla loaded for sharing, and the goat birria comes rolled in a fresh tortilla the size of your forearm. The room is pink and orange and built for lingering over caf\u00e9 de olla."},
+ {id:'marouch',glyph:'bowl',kind:"old-school mezze",icon:'🫒',lat:34.0906,lng:-118.2965,n:'Marouch',cat:'eat',hood:'East Hollywood · Santa Monica Blvd',score:'Infatuation 8.4',mi:.9,min:5,walk:18,why:'Armenian-Lebanese since 1982. Bring people; the mezze is the point.',flags:'Reserve for four.',src:"https://www.theinfatuation.com/los-angeles/reviews/marouch",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=4905%20Santa%20Monica%20Blvd%20Los%20Angeles",blurb:"Open since 1982, Marouch is one of the oldest Armenian-Lebanese restaurants in Hollywood and still family-run. The kebab platters are fine, but the reason to come is the mezze: muhammara, sujuk, hummus with ful, falafel done right. It is the kind of place where a table of six orders twelve small plates and still argues about what they missed."},
+ {id:'saffys',glyph:'fire',kind:"live-fire kebabs",icon:'🔥',lat:34.0956,lng:-118.2952,n:"Saffy's",cat:'eat',hood:'East Hollywood · 4845 Fountain',score:'Infatuation 9.0',mi:1,min:6,walk:15,why:'Bavel team over live fire. Family-style kebabs, hummus that changes your mind.',flags:'Reserve. Loud. Patio if you can.',src:"https://www.theinfatuation.com/los-angeles/reviews/saffys",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=4845%20Fountain%20Ave%20Los%20Angeles",blurb:"Ori Menashe and Genevieve Gergis, the couple behind Bestia and Bavel, opened Saffy's in 2022 as the relaxed neighborhood version of their Middle Eastern cooking. Everything comes off a wood fire; the lamb-beef dish kebab feeds four, and the hummus is the same one that made Bavel famous. Walk-ins are welcomed with a tequila sour on the sidewalk while they find you a table, and there's a daytime caf\u00e9 next door."},
+ {id:'found',glyph:'oyster',kind:"raw bar",icon:'🦪',lat:34.0952,lng:-118.2958,n:'Found Oyster',cat:'eat',hood:'East Hollywood · 4880 Fountain',score:'Infatuation 9.4',mi:1,min:6,walk:15,why:'LA’s best raw bar under a disco ball. Overboard platter.',flags:'Groups sit on the patio; book it. Fri–Sun opens noon.',src:"https://www.theinfatuation.com/los-angeles/reviews/found-oyster",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=4880%20Fountain%20Ave%20Los%20Angeles",blurb:"Ari Kolender opened this twenty-seat seafood bar in 2019 and it became the highest-rated restaurant in Infatuation's LA guide. Many of the oysters come from his own family's farm on Cape Cod. There's a disco ball, an indie funk soundtrack, and a crab dip zapped with finger lime that people plan evenings around."},
+ {id:'jitlada',glyph:'chili',kind:"Thai Town legend",icon:'🌶️',lat:34.0986,lng:-118.3041,n:'Jitlada',cat:'eat',hood:'Thai Town · Sunset',score:'Infatuation 8.5',mi:1.1,min:6,walk:22,why:'Southern Thai landmark, 400 items. Crispy catfish salad, coco mango salad, crab with garlic.',flags:'Closed Mon. Slow on weekends.',src:"https://www.theinfatuation.com/los-angeles/reviews/jitlada",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=5233%20W%20Sunset%20Blvd%20Los%20Angeles",blurb:"Jitlada has been the anchor of Thai Town since the 1970s and became a food-writer pilgrimage in the 2000s when the Suriyaphakorn family took over and added a hundred-plus Southern Thai dishes. The menu runs over 400 items and the walls are covered in celebrity photos. Order the Jitlada originals, not the pad thai: crispy catfish salad, coco mango salad, stir-fried crab with garlic."},
+ {id:'amphai',glyph:'noodle',kind:"late-night noodles",icon:'🍜',lat:34.0983,lng:-118.3061,n:'Amphai Northern Thai Food Club',cat:'eat',hood:'Thai Town · Sunset',score:'Infatuation 8.5',mi:1.1,min:6,walk:22,why:'Khao soi and sai oua in a tiny green room. Open till 2am.',flags:'Few tables; better for two or three than four.',src:"https://www.theinfatuation.com/los-angeles/reviews/northern-thai-food-club",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=5301%20Sunset%20Blvd%20%2311%20Los%20Angeles",blurb:"Amphai Kongkanthom cooks the Northern Thai food of Chiang Mai out of a tiny all-green room in a Sunset strip mall, and it stays open until 2am every night. Khao soi, jackfruit salad, and a spicy sai oua sausage are the dishes people text friends about. Two women run the whole thing and treat the room like their house."},
+ {id:'sqirl',glyph:'coffee',kind:"eastside brunch",icon:'🍓',lat:34.0846,lng:-118.287,n:'Sqirl',cat:'am',hood:'Virgil Village',score:'Local canon',mi:1.3,min:7,walk:22,why:'Ricotta toast with house jam, sorrel pesto rice.',flags:'Counter order. Line by 9 on weekends.',src:"https://www.google.com/maps/search/?api=1&query=Sqirl%20720%20N%20Virgil%20Ave%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Sqirl%20720%20N%20Virgil%20Ave%20Los%20Angeles",blurb:"Jessica Koslow started Sqirl as a jam company in 2011 and turned it into the breakfast counter that defined Eastside LA for a decade. The ricotta toast with house jam and the sorrel pesto rice bowl are the dishes that launched a thousand copies. Expect a line on the sidewalk by nine on a weekend."},
+ {id:'bridgetown',glyph:'bowl',kind:"Caribbean lunch counter",icon:'🥟',lat:34.087,lng:-118.2915,n:'Bridgetown Roti',cat:'eat',hood:'East Hollywood · Vermont',score:'Infatuation 8.4',mi:1.4,min:7,walk:25,why:'Caribbean patties and goat roti. Quick lunch.',flags:'Casual.',src:"https://www.theinfatuation.com/los-angeles/reviews/bridgetown-roti",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=850%20N%20Vermont%20Ave%20Los%20Angeles",blurb:"Rashida Holmes ran Bridgetown Roti as a pop-up for years before opening this permanent spot near the LA City College campus. Trinidadian and Bajan cooking: turmeric patties, goat roti, curried mac and cheese, plantains, and house hot sauces that go on everything. Fast, cheap, and better than any fast-casual near a college has a right to be."},
+ {id:'paord',glyph:'bowl',kind:"duck shop",icon:'🦆',lat:34.1015,lng:-118.3019,n:'Roasted Duck by Pa Ord',cat:'eat',hood:'Thai Town · Hollywood Blvd',score:'Infatuation 8.5',mi:1.4,min:7,walk:null,why:'Roasted duck special for two with garlic jade noodles.',flags:'Closed Tue. Closet-sized.',src:"https://www.theinfatuation.com/los-angeles/reviews/roast-duck-by-pa-ord",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=5136%20Hollywood%20Blvd%20Los%20Angeles",blurb:"A closet-sized Thai Town spin-off from the Pa Ord noodle family, this one devoted entirely to duck. Whole birds hang in the window and a sassy grandma-duck mascot watches over the room. The roasted duck special with garlic jade noodles is the order; it comes for one or two."},
+ {id:'josephine',glyph:'knife',kind:"bistro, steak frites",icon:'🥩',lat:34.0908,lng:-118.2812,n:'Josephine',cat:'eat',hood:'Silver Lake · Santa Monica Blvd',score:'Infatuation 7.8',mi:1.4,min:7,walk:null,why:'French-Italian bistro that plays Pearl Jam. One of LA’s best steak frites.',flags:'Reserve on Resy.',src:"https://www.theinfatuation.com/los-angeles/reviews/josephine-silver-lake",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=4156%20Santa%20Monica%20Blvd%20Los%20Angeles",blurb:"A little yellow bungalow on the Silver Lake stretch of Santa Monica Boulevard with gingham tablecloths, potted carnations, vintage Playboys, and Pearl Jam on the speakers. French-Italian bistro food that changes monthly: duck-stuffed tortellini, fried sweetbreads, and a steak frites with triple-cooked duck-fat fries that Infatuation ranks among the best in the city."},
+ {id:'courage',glyph:'bagel',kind:"bagel window",icon:'🥯',lat:34.0855,lng:-118.2871,n:'Courage Bagels',cat:'am',hood:'Virgil Village · 777 N Virgil',score:'Infatuation 9.0',mi:1.6,min:8,walk:null,why:'City’s best bagel. Burnt everything with salmon.',flags:'Before 10am or don’t. Closed Tue–Wed.',src:"https://www.theinfatuation.com/los-angeles/reviews/courage-bagels",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=777%20N%20Virgil%20Ave%20Los%20Angeles",blurb:"Courage started as a backyard bagel pop-up and became the most argued-about bagel in Los Angeles, a Montreal-leaning, burnt-crust, wood-fired bagel that New Yorkers either love or refuse to accept. Infatuation scores it a 9.0, its highest bagel rating anywhere. Lines form before opening; the sidewalk stools are the only seats."},
+ {id:'doto',glyph:'coffee',kind:"all-day neighborhood",icon:'🌯',lat:34.0825,lng:-118.283,n:'Doto',cat:'am',hood:'Silver Lake · Hoover',score:'Infatuation 8.3',mi:1.6,min:8,walk:null,why:'All-day: breakfast burrito, fried chicken sandwich, izakaya dinner on the back patio.',flags:'Never too crowded.',src:"https://www.theinfatuation.com/los-angeles/reviews/doto",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=654%20N%20Hoover%20St%20Los%20Angeles",blurb:"Doto is the rare all-day restaurant you would actually spend all day in: proper lattes and one of LA's best breakfast burritos in the morning, a fried chicken sandwich at lunch, and an izakaya-leaning dinner of oxtail curry and shareable plates on a back patio that looks at the hills. Sake and natural wine are priced like a neighborhood place because it is one."},
+ {id:'mirate',glyph:'cocktail',kind:"agave bar, big scene",icon:'🌵',lat:34.1022,lng:-118.2917,n:'Mírate',cat:'drink',hood:'Los Feliz · 1712 N Vermont',score:'NA 50 Best #28',badge:'b50',mi:1.9,min:9,walk:null,why:'Best bar in the western US. Two-story courtyard under a 40-ft tree. Ancestral agave neat; tacos árabes are the plates to get.',flags:'Reserve for dinner. Sat opens 11am. Loud after 9.',src:"https://www.theworlds50best.com/bars/best-in-north-america/the-list/Mirate.html",srcLabel:"World's 50 Best",photos:"https://www.google.com/maps/search/?api=1&query=1712%20N%20Vermont%20Ave%20Los%20Angeles",blurb:"M\u00edrate opened in early 2023 in a 7,500-square-foot, two-story space built around a 40-foot tree, with murals by Mexico City artist Jorge Tellaeche and design inspired by 1920s Oaxaca. Beverage director Max Reis built a bar of ethically made agave spirits, private-barrel Oaxacan rum, and pre-Hispanic ferments like tepache and nitro pulque. It was named Best Bar in the West USA on the 2025 North America's 50 Best list and sits at No. 28 in 2026. Infatuation is honest that the bar outruns the kitchen; the tacos \u00e1rabes are the plates worth ordering."},
+ {id:'kismet',glyph:'bowl',kind:"easy Mediterranean",icon:'🍚',lat:34.1019,lng:-118.2935,n:'Kismet',cat:'eat',hood:'Los Feliz · Hollywood Blvd',score:'Infatuation 8.3',mi:1.9,min:9,walk:null,why:'Laid-back Mediterranean; tahdig rice with the yolk underneath.',flags:'Reserve dinner; brunch walk-in.',src:"https://www.theinfatuation.com/los-angeles/reviews/kismet",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=4648%20Hollywood%20Blvd%20Los%20Angeles",blurb:"Sara Kramer and Sarah Hymanson opened Kismet in 2017 after their falafel stand at Grand Central Market took off, and the blonde-wood room became the Eastside's default for a vegetable-forward dinner that pleases everyone. The crispy tahdig rice with a soft yolk buried inside is the dish to fight over. The wine list is short, interesting, and fairly priced."},
+ {id:'sunnongdan',glyph:'bowl',kind:"24-hr galbi jjim",icon:'🧀',lat:34.0638,lng:-118.3,n:'Sun Nong Dan',cat:'eat',hood:'Koreatown · 6th St',score:'Local canon · 24h',mi:2,min:10,walk:null,why:'Galbi jjim with cheese at midnight. The post-game meal.',flags:'Wait at any hour. No reservations.',src:"https://www.google.com/maps/search/?api=1&query=Sun%20Nong%20Dan%203470%20W%206th%20St%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Sun%20Nong%20Dan%203470%20W%206th%20St%20Los%20Angeles",blurb:"A 24-hour Koreatown institution known for one dish above all: galbi jjim, braised short ribs in a spicy sauce, torched tableside under a blanket of cheese. There's a line at 2am on a Saturday and the room turns tables like a diner. It's where LA eats after a game, a show, or a bad decision."},
+ {id:'haejangchon',glyph:'fire',kind:"AYCE KBBQ",icon:'🥓',lat:34.064,lng:-118.3075,n:'Hae Jang Chon',cat:'eat',hood:'Koreatown · 6th St',score:'Local canon',mi:2.2,min:10,walk:null,why:'All-you-can-eat KBBQ on stone. The version MJ’s friends pick.',flags:'Two-hour limit, long line after 7.',src:"https://www.google.com/maps/search/?api=1&query=Hae%20Jang%20Chon%203821%20W%206th%20St%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Hae%20Jang%20Chon%203821%20W%206th%20St%20Los%20Angeles",blurb:"Hae Jang Chon has been the all-you-can-eat Korean barbecue benchmark for LA students and late-night crowds for two decades, cooking on a heavy stone grill rather than a grate. Two-hour limit, endless banchan, and a line that stretches down 6th Street after 7pm. Cheaper and louder than Park's; the crowd is a third of the show."},
+ {id:'vandell',glyph:'cocktail',kind:"'70s cocktail room",icon:'🍸',lat:34.1073,lng:-118.2872,n:'Vandell',cat:'drink',hood:'Los Feliz · 1966 Hillhurst',score:'NA 50 Best #68 (new)',badge:'b50',mi:2.3,min:11,walk:null,why:'Opened late 2025. 1970s Campari negroni, sherry highballs, tarragon-vinegar martini. Steak frites if hungry.',flags:'Open to 1am nightly. Small; wait after 9.',src:"https://www.the50.com/stories/News/north-americas-50-best-bars-2026-51-100-list.html",srcLabel:"North America's 50 Best (51\u2013100)",photos:"https://www.google.com/maps/search/?api=1&query=1966%20Hillhurst%20Ave%20Los%20Angeles",blurb:"Opened in late 2025 by the team behind Bar Flores in Echo Park, Vandell is a wood-paneled, 1970s-California cocktail room with a short bistro menu of anchovy toast and steak frites. The trick on the menu is vintage spirits: negronis built on Campari bottled in the actual seventies, alongside sherry highballs and a martini sharpened with tarragon vinegar. It entered North America's 50 Best at No. 68 in its first year and was a 2026 Spirited Awards nominee for Best New US Cocktail Bar."},
+ {id:'wildes',glyph:'candle',kind:"British bistro",icon:'🕯️',lat:34.1046,lng:-118.2873,n:"Wilde's",cat:'eat',hood:'Los Feliz · 1850 Hillhurst',score:'Infatuation 8.6',mi:2.3,min:11,walk:null,why:'British bistro, candlelit. Battered skate, sticky toffee pudding.',flags:'Half the room is walk-in; line at 5 for the 5:30 seating. Sat/Sun brunch.',src:"https://www.theinfatuation.com/los-angeles/reviews/wildes",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=1850%20Hillhurst%20Ave%20Los%20Angeles",blurb:"A British bistro that has been packed since the day it opened, doing sausage rolls and coffee by day and candlelit bangers, battered skate, and sticky toffee pudding by night. Half the small dining room is held for walk-ins and the line forms on Hillhurst at five for the 5:30 seating. Infatuation scores it 8.6, the highest in Los Feliz."},
+ {id:'alltime',glyph:'knife',kind:"backyard steak night",icon:'🔪',lat:34.1078,lng:-118.2872,n:'All Time',cat:'eat',hood:'Los Feliz · 2040 Hillhurst',score:'Infatuation 8.4',mi:2.3,min:11,walk:null,why:'Backyard-potluck energy, 68-day dry-aged steak that feeds four.',flags:'Reserve.',src:"https://www.theinfatuation.com/los-angeles/reviews/all-time",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=2040%20Hillhurst%20Ave%20Los%20Angeles",blurb:"Tyler and Ashley Wells run All Time like a backyard dinner party with a better wine list; the menu is painted on the front window. The 68-day dry-aged steak is listed for two and feeds four, and the seasonal salad is called the Good Ass Salad on the menu, accurately. The bacon-stuffed breakfast burrito is the daytime reason to come."},
+ {id:'musso',glyph:'martini',kind:"Hollywood steakhouse",icon:'🍸',lat:34.1018,lng:-118.3357,n:'Musso & Frank',cat:'eat',hood:'Hollywood Blvd',score:'Reserved · Fri dinner',mi:2.5,min:10,walk:null,why:'Booked for Friday night. Martini in the chilled sidecar, then the grilled chops, the chicken pot pie on Thursdays, or the flannel cakes if anyone wants dessert first.',flags:'Reservation is set. Closed Sun–Mon. Ask for the Old Room.',src:"https://www.google.com/maps/search/?api=1&query=Musso%20%26%20Frank%20Grill%206667%20Hollywood%20Blvd%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Musso%20%26%20Frank%20Grill%206667%20Hollywood%20Blvd%20Los%20Angeles",blurb:"Hollywood's oldest restaurant, open on this block since 1919, with red leather booths, red-jacketed waiters who have worked there for decades, and a bar where Chandler, Faulkner, and Fitzgerald drank between studio jobs. The Old Room, the New Room, and the back room each have their own regulars; the Old Room is the one to ask for. The martini arrives with the rest of it in a chilled sidecar carafe, and the menu has barely changed since the Depression."},
+ {id:'parks',glyph:'fire',kind:"prime KBBQ",icon:'🥩',lat:34.0555,lng:-118.2916,n:"Park's BBQ",cat:'eat',hood:'Koreatown · 955 S Vermont',score:'Local canon',mi:2.6,min:12,walk:null,why:'The KBBQ benchmark. Prime galbi, servers cook it.',flags:'Reserve. Valet only. Pricey.',src:"https://www.google.com/maps/search/?api=1&query=Park%27s%20BBQ%20955%20S%20Vermont%20Ave%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Park%27s%20BBQ%20955%20S%20Vermont%20Ave%20Los%20Angeles",blurb:"Jenee Kim opened Park's in 2003 and it's been the Korean barbecue that chefs and critics name first ever since, built on prime and wagyu beef rather than volume. Servers cook the meat for you, the banchan keeps arriving, and the marbled galbi is the order. Valet only, reservations recommended, and priced accordingly."},
+ {id:'besito',glyph:'wine',kind:"sherry & conservas",icon:'🍷',lat:34.0894,lng:-118.2681,n:'Bar Besito (was Bar Siesta)',cat:'drink',hood:'Silver Lake · 1710 Silver Lake Blvd',score:'Infatuation 7.8',mi:2.6,min:12,walk:null,why:'Spanish tapas and conservas, all-Spanish list: sherry, vermouth, cider. M’s bar.',flags:'Closed Tue–Wed. Small plates, small room.',src:"https://www.theinfatuation.com/los-angeles/reviews/bar-siesta",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=1710%20Silver%20Lake%20Blvd%20Los%20Angeles",blurb:"Opened in 2024 by the Botanica owners with a tinned-fish company as partner, the bar has since changed its name from Bar Siesta to Bar Besito at the same address. The list is entirely Spanish: sherry, vermouth, Basque cider, Rioja by the bottle. Conservas straight from the tin, croquetas, morcilla, and prawns in smoky oil make it the closest thing LA has to a Jerez tabanco."},
+ {id:'benjamin',glyph:'cocktail',kind:"Art Deco cocktail bar",icon:'🎩',lat:34.0833,lng:-118.346,n:'Bar Benjamin',cat:'drink',hood:'Fairfax · 7174 Melrose',score:'Infatuation + Time Out pick',mi:2.6,min:12,walk:null,why:'Art Deco room, the most inventive cocktail list in the city.',flags:'Reserve on Resy. Closed Sun–Mon.',src:"https://www.timeout.com/los-angeles/bars/best-cocktail-bars-where-to-find-the-classiest-cocktails-in-la",srcLabel:"Time Out best cocktail bars",photos:"https://www.google.com/maps/search/?api=1&query=Bar%20Benjamin%207174%20Melrose%20Ave%20Los%20Angeles",blurb:"Bar Benjamin is the cocktail room attached to The Benjamin, a Fairfax restaurant in a restored Art Deco building. Drinks are the most elaborate in the city, with flavors like pear brandy with Roquefort and baguette air, or a negroni that tastes like a tomato off the vine. Both Infatuation and Time Out rank it near the top of LA, and reviewers keep calling it their favorite bar in town."},
+ {id:'republique',glyph:'coffee',kind:"grand brunch hall",icon:'🥐',lat:34.064,lng:-118.344,n:'République',cat:'am',hood:'La Brea',score:'Local canon',mi:2.8,min:12,walk:null,why:'Cathedral room in a 1929 building. Brunch until 2, then dinner.',flags:'Book for four or five.',src:"https://www.google.com/maps/search/?api=1&query=R%C3%A9publique%20624%20S%20La%20Brea%20Ave%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=R%C3%A9publique%20624%20S%20La%20Brea%20Ave%20Los%20Angeles",blurb:"Walter and Margarita Manzke opened R\u00e9publique in 2013 inside a 1929 building Charlie Chaplin commissioned, with a cathedral-like dining hall of stone arches and a bakery counter that sells out of kouign-amann daily. Brunch is a counter-order crowd scene until two; dinner turns white-tablecloth French. It's the room most visitors photograph first."},
+ {id:'pijja',glyph:'pizza',kind:"Indian sports bar",icon:'🍕',lat:34.0855,lng:-118.267,n:'Pijja Palace',cat:'eat',hood:'Silver Lake · Sunset',score:'Infatuation 8.3',mi:3.1,min:14,walk:null,why:'Indian sports bar. Saag pizza, masala wings, malai rigatoni. TVs on every wall.',flags:'Resy drops 7 days out at midnight, gone in seconds. Walk in at 5.',src:"https://www.theinfatuation.com/los-angeles/reviews/pijja-palace",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=2711%20Sunset%20Blvd%20Los%20Angeles",blurb:"Avish Naran opened Pijja Palace in 2022 as an Indian sports bar and it became one of the hardest reservations on the Eastside: TVs on every wall, mid-century booths, and saag-topped pizzas, masala wings, and a malai rigatoni people drive across town for. Resy opens seven days out at midnight and is gone in seconds. Show up at five when the doors open and you'll walk in, unless the Dodgers are playing."},
+ {id:'ceviche',glyph:'fish',kind:"one-man ceviche bar",icon:'🍋',lat:34.105,lng:-118.2728,n:'Ceviche Project',cat:'eat',hood:'Silver Lake · Hyperion',score:'Infatuation 8.6',mi:3.2,min:14,walk:null,why:'Marble bar, one man, ceviche and crudo only. Kanpachi tostada.',flags:'Reservation only. Closed Sun–Mon. Better for two.',src:"https://www.theinfatuation.com/los-angeles/reviews/ceviche-project",srcLabel:"Infatuation review",photos:"https://www.google.com/maps/search/?api=1&query=2524%20Hyperion%20Ave%20Los%20Angeles",blurb:"Octavio Olivas ran Ceviche Project as a pop-up for years before settling into this tiny marble-bar room in Silver Lake, where he preps, serves, and mixes the micheladas himself. Scallops on the half shell, tai snapper ceviche, and a kanpachi tostada piled with trout roe. It is reservation-only and closed Sunday and Monday; Infatuation calls it a Miami club in the eighties."},
+ {id:'langers',glyph:'sandwich',kind:"pastrami institution",icon:'🥪',lat:34.057,lng:-118.276,n:"Langer's",cat:'eat',hood:'Westlake · 7th & Alvarado',score:'Local canon',mi:3.3,min:14,walk:null,why:'#19 pastrami. On the route in from LAX.',flags:'Closes 4pm. Closed Sun.',src:"https://www.google.com/maps/search/?api=1&query=Langer%27s%20Delicatessen%20704%20S%20Alvarado%20St%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Langer%27s%20Delicatessen%20704%20S%20Alvarado%20St%20Los%20Angeles",blurb:"Al Langer opened across from MacArthur Park in 1947, and the #19, hot pastrami with Swiss, coleslaw, and Russian dressing on double-baked rye, has been called the best pastrami sandwich in America for decades. His son Norm still runs it. Closes at four, closed Sundays, and sits right on the route in from LAX."},
+ {id:'thunderbolt',glyph:'cocktail',kind:"craft cocktail bar",icon:'⚡',lat:34.0664,lng:-118.2541,n:'Thunderbolt',cat:'drink',hood:'Historic Filipinotown · Temple St',score:'NA 50 Best #92',badge:'b50',mi:3.6,min:15,walk:null,why:'Only LA bar on the 2026 Spirited Awards top-10 shortlist. Technical, unpretentious, great bar food.',flags:'Closed Tue. Sun opens 2pm. On the way home from the Coliseum.',src:"https://www.theworlds50best.com/discovery/Establishments/US/Los-Angeles/Thunderbolt.html",srcLabel:"World's 50 Best",photos:"https://www.google.com/maps/search/?api=1&query=1263%20W%20Temple%20St%20Los%20Angeles",blurb:"Mike Capoferri opened Thunderbolt in 2019 on a quiet block of Historic Filipinotown, and it has been on the North America's 50 Best list every year since, No. 92 in 2026. The bar runs a zero-waste, tech-forward program with heavy pre-batching so every drink is identical, and the food is real: fried green tomatoes, a proper Caesar. In 2026 it was the only LA bar on the Spirited Awards top-10 shortlist for Best US Cocktail Bar."},
+ {id:'nightonearth',glyph:'cocktail',kind:"retro-future bar",icon:'🪐',lat:34.13,lng:-118.3488,n:'Night on Earth',cat:'drink',hood:'Cahuenga Pass',score:'Time Out best new bar',mi:4.3,min:15,walk:null,why:'Thunderbolt’s sibling. Retro-future room, no food.',flags:'Open to 2am Fri–Sat.',src:"https://www.timeout.com/los-angeles/bars/best-cocktail-bars-where-to-find-the-classiest-cocktails-in-la",srcLabel:"Time Out best cocktail bars",photos:"https://www.google.com/maps/search/?api=1&query=Night%20on%20Earth%203256%20Cahuenga%20Blvd%20W%20Los%20Angeles",blurb:"The Thunderbolt team's second bar, opened in December 2024 in the Cahuenga Pass with a neon-blue bar, curvy banquettes, and a retro-future look Time Out named the best new bar in LA. Cocktails are kitschy classics given a technical makeover: a smoked-apple appletini, a carbonated Oaxacan rum zombie, an old fashioned that tastes like movie-theater butter. No kitchen; you can bring food in."},
+ {id:'gcm',glyph:'market',kind:"downtown food hall",icon:'🌮',lat:34.0507,lng:-118.2489,n:'Grand Central Market',cat:'eat',hood:'DTLA · Broadway',score:'Local canon',mi:5.2,min:18,walk:null,why:'Eggslut, pupusas, Villa Moreliana tacos.',flags:'Crowded noon to 2.',src:"https://www.google.com/maps/search/?api=1&query=Grand%20Central%20Market%20317%20S%20Broadway%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Grand%20Central%20Market%20317%20S%20Broadway%20Los%20Angeles",blurb:"Open since 1917 on Broadway, Grand Central Market survived a century of downtown's rise and fall and was reborn as LA's best food hall in the 2010s. Eggslut, Sarita's pupusas, Villa Moreliana carnitas, and Wexler's Deli are the stalls that matter. Crowded from noon to two; go before or after."},
+ {id:'bavel',glyph:'fire',kind:"Middle Eastern, big night",icon:'🐑',lat:34.0378,lng:-118.2325,n:'Bavel',cat:'eat',hood:'Arts District',score:'Local canon',mi:6.5,min:20,walk:null,why:'Lamb neck, hummus, the best Middle Eastern room in the country.',flags:'Resy 30 days out. Loud.',src:"https://www.google.com/maps/search/?api=1&query=Bavel%20500%20Mateo%20St%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Bavel%20500%20Mateo%20St%20Los%20Angeles",blurb:"Ori Menashe and Genevieve Gergis opened Bavel in 2018 as the Middle Eastern follow-up to Bestia, and it's been the hardest table in the Arts District ever since. The slow-roasted lamb neck, the hummus with duck 'nduja, and the oyster mushroom kebab are the dishes to plan around. Reservations open 30 days ahead on Resy and go fast."},
+ {id:'bestia',glyph:'pizza',kind:"Arts District Italian",icon:'🦴',lat:34.0335,lng:-118.2295,n:'Bestia',cat:'eat',hood:'Arts District',score:'Local canon',mi:6.5,min:20,walk:null,why:'Bone marrow, pizzas, the whole charcuterie board.',flags:'Reserve. Louder than Bavel.',src:"https://www.google.com/maps/search/?api=1&query=Bestia%202121%20E%207th%20Pl%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Bestia%202121%20E%207th%20Pl%20Los%20Angeles",blurb:"Bestia opened in 2012 in a converted warehouse and effectively started the Arts District restaurant boom. Roasted bone marrow with spinach gnocchetti, wood-fired pizzas, and house-cured charcuterie are still the order more than a decade in. It's louder than Bavel and still sells out most nights."},
+ {id:'daisy',glyph:'cocktail',kind:"margarita cantina",icon:'🍹',lat:34.1518,lng:-118.4521,n:'Daisy Margarita Bar',cat:'drink',hood:'Sherman Oaks · Ventura Blvd',score:'NA 50 Best #44 (new)',badge:'b50',mi:12,min:30,walk:null,why:'Mírate team’s margarita cantina. Sweeter format; only if the Valley is on the way.',flags:'Loud. Sat opens 11am.',src:"https://www.theworlds50best.com/bars/best-in-north-america/lists/1-50",srcLabel:"North America's 50 Best",photos:"https://www.google.com/maps/search/?api=1&query=Daisy%2014633%20Ventura%20Blvd%20Sherman%20Oaks%20Los%20Angeles",blurb:"Max Reis and Matt Egan of M\u00edrate opened Daisy in April 2025 as a Sherman Oaks cantina built around the margarita as a vehicle for serious agave research. The list runs a dozen versions, from a guacamole-inspired green slushie to a mangoneada with popping boba, and there's a jukebox of Mexican cult classics. It debuted at No. 44 on North America's 50 Best in 2026."},
+ {id:'gjusta',glyph:'sandwich',kind:"Venice bakery-deli",icon:'🥖',lat:33.9982,lng:-118.4748,n:'Gjusta',cat:'am',hood:'Venice · Sunset Ave',score:'Local canon',mi:15,min:40,walk:null,why:'Bakery-deli, smoked fish, porchetta sandwich, back patio.',flags:'Counter order. Parking is hard.',src:"https://www.google.com/maps/search/?api=1&query=Gjusta%20320%20Sunset%20Ave%20Venice%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Gjusta%20320%20Sunset%20Ave%20Venice%20Los%20Angeles",blurb:"Travis Lett's bakery-deli opened in 2014 a few blocks from Gjelina and became the reason people drive to Venice for breakfast. Smoked fish plates, porchetta sandwiches, the bread, and a back patio that feels like a garden. Counter order, and the parking is famously bad; drop and circle."},
+ {id:'nobu',glyph:'fish',kind:"ocean-deck sushi",icon:'🌊',lat:34.0368,lng:-118.673,n:'Nobu Malibu',cat:'eat',hood:'Carbon Beach · PCH',score:'The ocean room',mi:24,min:50,walk:null,why:'Deck over the water. Sunset 6:43. The one place that delivers ocean plus scene.',flags:'Book 6pm for the deck; weeks out. Backups: Carbon Beach Club, Geoffrey’s.',src:"https://www.google.com/maps/search/?api=1&query=Nobu%20Malibu%2022706%20Pacific%20Coast%20Hwy%20Los%20Angeles",srcLabel:"Google Maps",photos:"https://www.google.com/maps/search/?api=1&query=Nobu%20Malibu%2022706%20Pacific%20Coast%20Hwy%20Los%20Angeles",blurb:"Nobu Malibu moved to this David Rockwell-designed building on Carbon Beach in 2013, with a wood deck that sits over the water on the same stretch of sand as the Malibu Beach Inn. It's the one room in Los Angeles where the food, the view, and the scene all show up at once. Book the deck at six for sunset; it fills weeks out."},
+];
+
+const DAYS = [
+ {id:'thu',t:'Thursday 24',s:'Land 9–10a · check-in 3p',fixed:{am:'Everyone lands LAX between 9 and 10a',pm:'Airbnb check-in 3:00p'}},
+ {id:'fri',t:'Friday 25',s:'Musso & Frank · dinner booked',fixed:{dinner:'Musso & Frank · reserved · 10 min'}},
+ {id:'sat',t:'Saturday 26',s:'USC vs Oregon · kick TBD',game:true,fixed:{pm:'USC vs Oregon · Coliseum'}},
+ {id:'sun',t:'Sunday 27',s:'Last morning · everyone out by 11',slots:['am'],fixed:{am:'MJ to LAX for his morning flight · checkout 11:00a · L and wife to LAX by 11:30 for the 2:00p flight'}},
+];
+const SLOTS=[['am','Morning'],['lunch','Lunch'],['pm','Afternoon'],['dinner','Dinner'],['late','Late']];
+const PEOPLE=[['m','M'],['mj','MJ'],['l','L']];
+
+// ---------- CONFIG ----------
+// Paste your Firebase Realtime Database URL here, e.g. "https://la-sept-2026-default-rtdb.firebaseio.com"
+// Leave empty and the page works on this device only.
+const DB_URL = "https://la-sept-2026-default-rtdb.firebaseio.com";
+const BOARD = "board";   // one shared board for everyone
+
+// ---------- STATE ----------
+let state={plan:{},votes:{}};
+let me=null; try{me=localStorage.getItem('la-sept-2026-me');}catch(e){}
+try{const s=localStorage.getItem('la-sept-2026');if(s)state=JSON.parse(s);}catch(e){}
+function saveLocal(){try{localStorage.setItem('la-sept-2026',JSON.stringify(state));}catch(e){}}
+function save(){saveLocal();}
+const online=()=>!!DB_URL;
+async function dbGet(){const r=await fetch(`${DB_URL}/${BOARD}.json`,{cache:'no-store'});return r.ok?(await r.json()):null;}
+async function dbPut(path,val){await fetch(`${DB_URL}/${BOARD}/${path}.json`,{method:'PUT',body:JSON.stringify(val)});}
+function normalize(d){d=d||{};const plan={};Object.entries(d.plan||{}).forEach(([k,v])=>{if(v)plan[k.replace('_',':')]=v;});return {plan,votes:d.votes||{}};}
+async function pullAndRender(){ if(!online())return;
+  try{const d=normalize(await dbGet());state=d;saveLocal();renderMenu();renderPlan();if(map&&document.getElementById('map').classList.contains('on'))drawMap();setStatus('synced');}
+  catch(e){setStatus('offline');} }
+function setStatus(t){const el=document.getElementById('sync');if(el)el.textContent=online()?(t==='synced'?'Shared board · live':'Shared board · reconnecting'):'This device only';}
+
+const byId=Object.fromEntries(ITEMS.map(i=>[i.id,i]));
+function placedIds(){return new Set(Object.values(state.plan).flat())}
+
+const GLYPH={
+ fish:'<path d="M3 12c3-4 6-6 10-6 3 0 6 2 8 6-2 4-5 6-8 6-4 0-7-2-10-6z"/><path d="M3 12l-1-4M3 12l-1 4"/><circle cx="16" cy="11" r="1"/>',
+ oyster:'<path d="M3 12c0-4 4-7 9-7s9 3 9 7-4 7-9 7-9-3-9-7z"/><path d="M6 12c2-2 4-3 6-3s4 1 6 3"/><path d="M12 9v6"/>',
+ fire:'<path d="M12 3c1 3 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 1-3s1 2 2 2c0-3-1-5 1-8z"/><path d="M5 21h14"/>',
+ taco:'<path d="M3 14a9 9 0 0 1 18 0v4H3z"/><path d="M6 14c2-1 4-1 6 0s4 1 6 0"/>',
+ bowl:'<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7l1-3M12 7V3M16 7l-1-3"/>',
+ noodle:'<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M7 4l1 7M11 3v8M15 4l-1 7"/>',
+ chili:'<path d="M18 4c-1 3-2 5-5 8s-6 5-9 6c1-4 3-7 6-10s5-4 8-4z"/><path d="M18 4c2 0 3 1 3 3"/>',
+ coffee:'<path d="M4 8h12v6a5 5 0 0 1-10 0z"/><path d="M16 9h2a2 2 0 0 1 0 4h-2"/><path d="M8 4c0 1 1 1 1 2M11 4c0 1 1 1 1 2"/>',
+ bagel:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/>',
+ knife:'<path d="M5 19L19 5"/><path d="M14 5l5 5-3 3-5-5"/>',
+ candle:'<path d="M9 21h6"/><path d="M12 10v11"/><path d="M12 10c-2-2-2-4 0-6 2 2 2 4 0 6z"/>',
+ martini:'<path d="M4 5h16l-8 9z"/><path d="M12 14v6"/><path d="M8 20h8"/>',
+ cocktail:'<path d="M8 3h8l-1 6a3 3 0 0 1-6 0z"/><path d="M12 12v8M8 20h8"/><path d="M15 3l2-1"/>',
+ wine:'<path d="M12 3v18"/><path d="M8 7v5c0 2 2 3 4 3s4-1 4-3V7"/><path d="M8 7h8"/><path d="M6 21h12"/>',
+ sandwich:'<path d="M4 8h16v4H4z"/><path d="M4 12l2 6h12l2-6"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/>',
+ pizza:'<path d="M12 3l9 16H3z"/><circle cx="12" cy="13" r="1"/><circle cx="9" cy="16" r="1"/><circle cx="15" cy="16" r="1"/>',
+ market:'<path d="M4 9h16v11H4z"/><path d="M3 9l2-5h14l2 5"/><path d="M9 20v-6h6v6"/>'
+};
+function glyphSvg(k){return `<svg viewBox="0 0 24 24" aria-hidden="true">${GLYPH[k]||GLYPH.bowl}</svg>`;}
+// ---------- DIRECTIONS ----------
+function dirUrl(i){const q=encodeURIComponent(i.n+' '+(i.hood.split('·').pop()||'').trim()+' Los Angeles');return `https://www.google.com/maps/dir/?api=1&destination=${q}&travelmode=${i.walk?'walking':'driving'}`;}
+// ---------- SCORE COIN ----------
+function coinFor(i){
+  const sc=i.score||'';let m;
+  if((m=sc.match(/^Infatuation (\d\.\d)/)))return {t:m[1],c:'',label:'Infatuation'+(i.tag?' · '+i.tag:'')};
+  if((m=sc.match(/50 Best #(\d+)/)))return {t:'#'+m[1],c:'fifty',label:'NA 50 Best'+(/new/.test(sc)?' · new':'')};
+  if(/^Reserved/.test(sc))return {t:'RSV',c:'res',label:sc.replace(/^Reserved · /,'')};
+  if(/Michelin/.test(sc))return {t:'★',c:'mich',label:'Michelin ★ 2026 · counter'};
+  if(/Since 1919/.test(sc))return {t:'1919',c:'canon',label:'Hollywood classic'};
+  return {t:'LA',c:'canon',label:sc};
+}
+// ---------- RENDER MENU ----------
+let filter='all',query='';
+function renderMenu(){
+  const placed=placedIds();
+  const list=document.getElementById('list');list.innerHTML='';
+  ITEMS.slice().sort((a,b)=>a.mi-b.mi).filter(i=>{
+    if(filter==='voted')return Object.values(state.votes[i.id]||{}).some(Boolean);
+    if(filter!=='all'&&i.cat!==filter)return false;
+    return true;
+  }).filter(i=>!query||(i.n+i.hood+i.why).toLowerCase().includes(query)).forEach(i=>{
+    const el=document.createElement('div');el.className='item'+(placed.has(i.id)?' placed':'');el.dataset.id=i.id;el.dataset.cat=i.cat;
+    const v=state.votes[i.id]||{};
+    el.innerHTML=`<div class="handle" aria-label="Drag" title="Drag to a day">⠿</div><div class="row"><h4>${i.n}</h4><span class="badge ${i.badge||(/^Reserved/.test(i.score)?'res':'')}">${i.score}</span></div>
+      <div><span class="pill">${glyphSvg(i.glyph)}${i.kind||''}</span></div>
+      <div class="sub">${i.hood}</div><div class="why">${i.why}</div>
+      <div class="dist"><span>${i.mi} mi</span><span>~${i.min} min Uber</span>${i.walk?`<span class="walk">${i.walk} min walk</span>`:''}</div>
+      ${i.flags?`<div class="flags">${i.flags}</div>`:''}
+      <details class="more"><summary>About</summary><p>${i.blurb||''}</p></details>
+      <div class="links"><a class="dir" href="${dirUrl(i)}" target="_blank" rel="noopener">Directions</a><a href="${i.src}" target="_blank" rel="noopener">${i.srcLabel||'Source'}</a><a href="${i.photos}" target="_blank" rel="noopener">Photos</a></div>
+      <div class="votes">${PEOPLE.map(([k,l])=>`<button class="${k}${me===k?' mine':''}" data-vote="${k}" aria-pressed="${!!v[k]}" title="${me===k?'You':l}">${l}</button>`).join('')}<button class="add" data-add="1">Add to a day</button></div>`;
+    list.appendChild(el);
+  });
+}
+document.getElementById('filters').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#filters button').forEach(x=>x.setAttribute('aria-pressed',x===b));filter=b.dataset.f;renderMenu();});
+document.getElementById('q').addEventListener('input',e=>{query=e.target.value.trim().toLowerCase();renderMenu();});
+document.getElementById('list').addEventListener('click',e=>{
+  const item=e.target.closest('.item');if(!item)return;
+  const vb=e.target.closest('[data-vote]');
+  if(vb){const id=item.dataset.id,k=vb.dataset.vote;
+    if(me&&k!==me){toast('Only your own initials.');return;}
+    if(!me){askWho();return;}
+    state.votes[id]=state.votes[id]||{};state.votes[id][k]=!state.votes[id][k];save();renderMenu();renderPlan();
+    if(online())dbPut(`votes/${id}/${k}`,state.votes[id][k]).catch(()=>setStatus('offline'));return;}
+  if(e.target.closest('[data-add]')){openSheet(item.dataset.id);}
+});
+
+// ---------- LEG DISTANCES ----------
+const LAX=[33.9416,-118.4085];
+function hav(a,b){const R=3958.8,toR=x=>x*Math.PI/180;const dLat=toR(b[0]-a[0]),dLng=toR(b[1]-a[1]);const h=Math.sin(dLat/2)**2+Math.cos(toR(a[0]))*Math.cos(toR(b[0]))*Math.sin(dLng/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function legText(from,to,label){const mi=hav(from,to)*1.3;const min=Math.max(3,Math.round(4+mi*3.2));return `${mi<0.05?'same spot':mi.toFixed(1)+' mi · ~'+min+' min'} from ${label}`;}
+function walkable(mi){return mi<=1.1}
+// ---------- RENDER PLAN ----------
+function renderPlan(){
+  const wrap=document.getElementById('days');wrap.innerHTML='';
+  DAYS.forEach(d=>{
+    const day=document.createElement('div');day.className='day '+d.id+(d.game?' game':'');
+    day.innerHTML=`<h3>${d.t}<small>${d.s}</small></h3>`;
+    let prev={pt:HOUSE,label:'the house'};
+    if(d.id==='thu')prev={pt:LAX,label:'LAX'};
+    SLOTS.filter(([sk])=>!d.slots||d.slots.includes(sk)).forEach(([sk,sl])=>{
+      const key=d.id+':'+sk;const ids=state.plan[key]||[];
+      if(d.id==='thu'&&sk==='pm'&&prev.label==='LAX')prev={pt:HOUSE,label:'the house'};
+      const slot=document.createElement('div');slot.className='slot';slot.dataset.key=key;
+      let html=`<div class="lab">${sl}</div><div class="drop">`;
+      if(d.fixed[sk])html+=`<div class="fixed"><b>${d.fixed[sk]}</b></div>`;
+      ids.forEach(id=>{const i=byId[id];if(!i)return;const v=state.votes[id]||{};const who=PEOPLE.filter(([k])=>v[k]).map(([,l])=>l).join(' ');
+        const rawMi=hav(prev.pt,[i.lat,i.lng])*1.3;const leg=legText(prev.pt,[i.lat,i.lng],prev.label);
+        html+=`<div class="pick" data-cat="${i.cat}"><span><span class="g">${glyphSvg(i.glyph)}</span>${i.n} <span class="m">· ${i.kind}</span>${who?` <span class="v">· ${who}</span>`:''}<span class="leg${walkable(rawMi)?' walk':''}">${walkable(rawMi)&&rawMi>0.05?'walk · ':''}${leg} · <a class="dir" href="${dirUrl(i)}" target="_blank" rel="noopener">Directions</a></span></span><button data-rm="${id}" aria-label="Remove">×</button></div>`;
+        prev={pt:[i.lat,i.lng],label:i.n};});
+      if(!ids.length&&!d.fixed[sk])html+=`<div class="empty">drop here</div>`;
+      html+='</div>';slot.innerHTML=html;day.appendChild(slot);
+    });
+    wrap.appendChild(day);
+  });
+}
+document.getElementById('days').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b)return;
+  const key=b.closest('.slot').dataset.key;state.plan[key]=(state.plan[key]||[]).filter(x=>x!==b.dataset.rm);save();renderPlan();renderMenu();
+  if(online())dbPut(`plan/${key.replace(':','_')}`,state.plan[key].length?state.plan[key]:null).catch(()=>setStatus('offline'));});
+function place(id,key){state.plan[key]=state.plan[key]||[];if(!state.plan[key].includes(id))state.plan[key].push(id);save();renderPlan();renderMenu();toast(byId[id].n+' → '+labelFor(key));
+  if(online())dbPut(`plan/${key.replace(':','_')}`,state.plan[key]).catch(()=>setStatus('offline'));}
+function labelFor(key){const [d,s]=key.split(':');return DAYS.find(x=>x.id===d).t.split(' ')[0]+' '+SLOTS.find(x=>x[0]===s)[1].toLowerCase();}
+
+// ---------- DRAG (pointer events, works on iOS) ----------
+const ghost=document.getElementById('ghost');let drag=null;
+document.getElementById('list').addEventListener('pointerdown',e=>{
+  const h=e.target.closest('.handle');if(!h)return;
+  const item=h.closest('.item');e.preventDefault();
+  drag={id:item.dataset.id,x:e.clientX,y:e.clientY,started:false,timer:null};
+  startDrag(item,e);
+});
+function startDrag(item,e){if(!drag)return;drag.started=true;item.classList.add('dragging');
+  ghost.innerHTML=`<div class="item dragging"><div class="row"><h4>${byId[drag.id].n}</h4></div></div>`;ghost.style.display='block';moveGhost(e.clientX,e.clientY);
+  if(window.innerWidth<900){switchPane('plan');}
+}
+function moveGhost(x,y){ghost.style.left=(x-140)+'px';ghost.style.top=(y-20)+'px';}
+window.addEventListener('pointermove',e=>{if(!drag)return;
+  e.preventDefault();moveGhost(e.clientX,e.clientY);
+  const el=document.elementFromPoint(e.clientX,e.clientY);const slot=el&&el.closest('.slot');
+  document.querySelectorAll('.slot.over').forEach(s=>s.classList.remove('over'));if(slot)slot.classList.add('over');
+  // autoscroll plan pane near edges
+  const pane=document.getElementById('plan');const r=pane.getBoundingClientRect();
+  if(e.clientY>r.bottom-60)pane.scrollTop+=12;else if(e.clientY<r.top+60)pane.scrollTop-=12;
+},{passive:false});
+window.addEventListener('pointerup',e=>{if(!drag)return;clearTimeout(drag.timer);
+  if(drag.started){ghost.style.display='none';document.querySelectorAll('.dragging').forEach(x=>x.classList.remove('dragging'));
+    const el=document.elementFromPoint(e.clientX,e.clientY);const slot=el&&el.closest('.slot');
+    document.querySelectorAll('.slot.over').forEach(s=>s.classList.remove('over'));
+    if(slot)place(drag.id,slot.dataset.key);else if(window.innerWidth<900)switchPane('menu');}
+  drag=null;});
+window.addEventListener('pointercancel',()=>{if(drag){clearTimeout(drag.timer);ghost.style.display='none';document.querySelectorAll('.dragging').forEach(x=>x.classList.remove('dragging'));drag=null;}});
+
+// ---------- TAP-TO-ADD SHEET ----------
+const sheet=document.getElementById('sheet'),scrim=document.getElementById('scrim');
+function openSheet(id){
+  sheet.innerHTML=`<h4>${byId[id].n} → which day and slot?</h4><div class="grid">`+DAYS.map(d=>`<button class="day" disabled>${d.t}</button>`+SLOTS.filter(([sk])=>!d.slots||d.slots.includes(sk)).map(([sk,sl])=>`<button data-key="${d.id}:${sk}">${sl}</button>`).join('')).join('')+`</div><button class="close" id="closeSheet">Cancel</button>`;
+  sheet.classList.add('on');scrim.classList.add('on');
+  sheet.onclick=e=>{const b=e.target.closest('[data-key]');if(b){place(id,b.dataset.key);closeSheet();}if(e.target.id==='closeSheet')closeSheet();};
+}
+function closeSheet(){sheet.classList.remove('on');scrim.classList.remove('on');}
+scrim.addEventListener('click',closeSheet);
+
+// ---------- PANES / TOOLS ----------
+function switchPane(p){
+  const desktop=window.innerWidth>=900;
+  document.querySelectorAll('.pane').forEach(x=>{ if(desktop&&x.id==='menu')return; x.classList.toggle('on',x.id===p);});
+  if(desktop&&p==='menu'){document.getElementById('plan').classList.add('on');document.getElementById('map').classList.remove('on');p='plan';}
+  document.querySelectorAll('.switch button,.rtabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.pane===p));
+  if(p==='map'){initMap();requestAnimationFrame(()=>setTimeout(()=>{map.invalidateSize();drawMap();},250));}
+}
+window.addEventListener('resize',()=>{if(map)map.invalidateSize();});
+document.querySelector('.rtabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchPane(b.dataset.pane);});
+if(window.innerWidth>=900){document.getElementById('plan').classList.add('on');}
+
+// ---------- MAP ----------
+const HOUSE=[34.0838,-118.3067];
+const CATCOL={eat:'#E4572E',drink:'#1F6F78',am:'#3E7C4F'};
+const DAYCOL={thu:'#1C1B1A',fri:'#E4572E',sat:'#8C1D2E',sun:'#1F6F78'};
+let map=null,layer=null,mapMode='all';
+function initMap(){ if(map)return;
+  map=L.map('leaflet',{zoomControl:true,attributionControl:true}).setView(HOUSE,13);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+  L.marker(HOUSE,{icon:L.divIcon({className:'',html:`<div class="house-pin"><span class="tag">Fight on · the house</span><svg viewBox="0 0 48 48"><g stroke="#1C1B1A" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M30 8l4-3 4 4-2 3 3 3-3 6-6-1v6h6l-2 8H14l-2-8h6v-8c-4-1-6-4-5-8 1-5 6-6 10-5l7 3z" fill="#9D2235"/><path d="M27 9c-2 2-2 5 0 7" fill="none" stroke="#FFC72C"/><path d="M18 19c4-2 9-2 13 0" fill="none" stroke="#FFC72C"/><rect x="21" y="22" width="6" height="7" fill="#FFC72C"/><path d="M10 40h28" stroke="#1C1B1A" stroke-width="3"/><circle cx="14" cy="41" r="3.5" fill="#FFC72C"/><circle cx="34" cy="41" r="3.5" fill="#FFC72C"/><circle cx="35" cy="9" r="1" fill="#1C1B1A" stroke="none"/></g></svg><span class="shadow"></span></div>`,iconSize:[44,52],iconAnchor:[22,52]}),zIndexOffset:1000}).addTo(map).bindPopup('<b>The house</b><br>723 N Harvard Blvd. Every distance on the menu is from here.');
+  layer=L.layerGroup().addTo(map);
+}
+function drawMap(){ if(!map)return; layer.clearLayers();
+  const pts=[HOUSE]; const leg=document.getElementById('legend'); leg.innerHTML='';
+  if(mapMode==='plan'){
+    DAYS.forEach(d=>{ SLOTS.forEach(([sk,sl])=>{ (state.plan[d.id+':'+sk]||[]).forEach(id=>{const i=byId[id];if(!i)return;
+      addPin(i,DAYCOL[d.id],`${d.t.split(' ')[0]} ${sl.toLowerCase()}`);pts.push([i.lat,i.lng]);});});});
+    leg.innerHTML=DAYS.map(d=>`<span><i style="background:${DAYCOL[d.id]}"></i>${d.t}</span>`).join('');
+    if(pts.length===1)leg.innerHTML+='<span>Nothing on the plan yet. Drag something onto a day.</span>';
+  }else{
+    ITEMS.filter(i=>mapMode==='all'||i.cat===mapMode).forEach(i=>{addPin(i,CATCOL[i.cat],'');pts.push([i.lat,i.lng]);});
+    leg.innerHTML=`<span><i style="background:${CATCOL.eat}"></i>Eat</span><span><i style="background:${CATCOL.drink}"></i>Drink</span><span><i style="background:${CATCOL.am}"></i>Coffee & brunch</span><span>Fainter pin = farther than 20 min</span>`;
+  }
+  map.fitBounds(L.latLngBounds(pts).pad(0.15),{maxZoom:14});
+}
+function addPin(i,color,tag){
+  const far=i.min>20;
+  const m=L.circleMarker([i.lat,i.lng],{radius:far?6:8,color:'#fff',weight:1.5,fillColor:color,fillOpacity:far?.55:.95});
+  const who=PEOPLE.filter(([k])=>(state.votes[i.id]||{})[k]).map(([,l])=>l).join(' ');
+  m.bindTooltip(i.n,{direction:'top',offset:[0,-6]});
+  m.bindPopup(`<b>${i.n}</b><br>${i.hood}<br>${i.mi} mi · ~${i.min} min Uber${i.walk?` · ${i.walk} min walk`:''}${tag?`<br><b>${tag}</b>`:''}${who?`<br>In: ${who}`:''}<br><a href="${dirUrl(i)}" target="_blank" rel="noopener">Directions</a> · <a href="${i.photos}" target="_blank" rel="noopener">Photos</a>`);
+  layer.addLayer(m);
+}
+document.getElementById('mapbar').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#mapbar button').forEach(x=>x.setAttribute('aria-pressed',x===b));mapMode=b.dataset.m;drawMap();});
+document.querySelector('.switch').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchPane(b.dataset.pane);});
+document.getElementById('reset').addEventListener('click',()=>{if(confirm('Clear every day for everyone? Votes stay.')){state.plan={};save();renderPlan();renderMenu();if(online())dbPut('plan',null).catch(()=>setStatus('offline'));}});
+document.getElementById('share').addEventListener('click',()=>{
+  let out='LA · Thu Sept 24 – Sun Sept 27\n';
+  DAYS.forEach(d=>{out+=`\n${d.t} — ${d.s}\n`;SLOTS.filter(([sk])=>!d.slots||d.slots.includes(sk)).forEach(([sk,sl])=>{const ids=state.plan[d.id+':'+sk]||[];const f=d.fixed[sk];
+    if(f||ids.length){out+=`  ${sl}: ${[f,...ids.map(id=>byId[id].n+' — '+byId[id].kind)].filter(Boolean).join(' · ')}\n`;}});});
+  const voted=ITEMS.filter(i=>Object.values(state.votes[i.id]||{}).some(Boolean));
+  if(voted.length){out+='\nInterested but not placed:\n';voted.filter(i=>!placedIds().has(i.id)).forEach(i=>{const v=state.votes[i.id];out+=`  ${i.n} — ${PEOPLE.filter(([k])=>v[k]).map(([,l])=>l).join(' ')}\n`;});}
+  navigator.clipboard?.writeText(out).then(()=>toast('Copied. Paste it in the group chat.'),()=>prompt('Copy this:',out));
+});
+let tt;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',1800);}
+
+function askWho(){
+  sheet.innerHTML=`<h4>Who are you?</h4><p style="font-size:13px;color:var(--ink2);margin:0 0 10px">Your votes are yours; everyone sees the same plan.</p><div class="grid">${PEOPLE.map(([k,l])=>`<button data-me="${k}" class="day">${l==='M'?'Manny':l==='MJ'?'Manny Jr':'Lisandro (and wife)'}</button>`).join('')}</div>`;
+  sheet.classList.add('on');scrim.classList.add('on');
+  sheet.onclick=e=>{const b=e.target.closest('[data-me]');if(!b)return;me=b.dataset.me;try{localStorage.setItem('la-sept-2026-me',me);}catch(x){}closeSheet();renderMenu();document.getElementById('whoami').textContent='You are '+b.textContent+' · ';};
+}
+document.getElementById('whoami').addEventListener('click',askWho);
+(async()=>{ setStatus('offline'); if(online()){await pullAndRender();setInterval(pullAndRender,8000);} else {renderMenu();renderPlan();}
+  if(!me)askWho(); else document.getElementById('whoami').textContent='You are '+(me==='m'?'Manny':me==='mj'?'Manny Jr':'Lisandro')+' · '; })();
+</script>
+</body>
+</html>
